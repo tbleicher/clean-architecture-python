@@ -1,6 +1,4 @@
-# Clean Architecture for GraphQL in Python
-
-# 1. A basic server
+# 1. Basic FastAPI server with GraphQL in Docker
 
 ## Project structure
 
