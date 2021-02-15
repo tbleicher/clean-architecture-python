@@ -1,6 +1,12 @@
-import os
 from fastapi import FastAPI
 from app.adapters.graphql.graphql_app import GraphQLApp
+
+from app.di_containers import AppDependencies
+
+dependencies = AppDependencies()
+dependencies.core.init_resources()
+# TODO: dependency discovery
+
 
 app = FastAPI()
 
@@ -9,7 +15,7 @@ app = FastAPI()
 async def healthcheck():
     return {
         "ping": "pong",
-        "environment": os.getenv("ENVIRONMENT"),
+        "environment": dependencies.config.environment(),
     }
 
 

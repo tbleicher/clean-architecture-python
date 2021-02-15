@@ -4,15 +4,25 @@ import re
 
 from starlette.testclient import TestClient
 
-# need to set env var defaults before app is imported
+# need to set environment before AppDependencies or app are imported
 os.environ["ENVIRONMENT"] = "test"
 os.environ["DATABASE_URL"] = "sqlite://:memory:"
 os.environ["TOKEN_SECRET"] = "used to sign tokens"
 
-from app import main
 
+from app import main
+from app.di_containers import AppDependencies
 
 SPEC_REGEX = re.compile(r"\s?\[\D+-\d+\]\s?")
+
+
+@pytest.fixture(scope="session")
+def dependencies():
+    dependencies = AppDependencies()
+    dependencies.core.init_resources()
+    # TODO: dependency discovery
+
+    yield dependencies
 
 
 @pytest.fixture(scope="module")

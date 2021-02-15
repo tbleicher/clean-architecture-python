@@ -7,7 +7,7 @@ In this repo I will build up a GraphQL server in Python based on [Clean Architec
 0. Introduction (yet to come)
 1. [Basic FastAPI server with GraphQL in Docker](./src/docs/01_fastapi_graphql_docker.md)
 2. [Testing](./src/docs/02_testing.md)
-3. Dependency Injection
+3. [Dependency Injection](./src/docs/03_dependency_injection.md)
 4. The first Use Case
 5. Authorisation
 6. ... and some more
