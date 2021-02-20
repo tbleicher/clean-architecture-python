@@ -19,27 +19,17 @@ For our project we will use the [Dependency Injector](https://python-dependency-
 
 ### Defining Dependencies
 
-We don't have any class yet that require dependencies. So for the moment we will just set up a basic configuration provider. When we implement our repositories and services we can add to this setup as needed.
+We don't have any class yet that require dependencies. So for the moment we will just set up a basic dependency provider. When we implement our repositories and services we can add to this setup as needed.
 
-Our dependencies will all be contained in the `AppDependencies` class. We can set up several containers (like `Core`) and assemble them inside `AppDependencies`. Additionally, we create an instance of a `Configuration` provider to pass configuration options to all dependencies that might require them.
+Our dependencies will all be contained in the `AppDependencies` class. We can set up several containers and assemble them inside `AppDependencies`. Initially, we just create an instance of a `Configuration` provider to pass configuration options to all dependencies that might require them.
 
 With _Dependency Injector_ the pattern is usually to set up a base dependency and then to overwrite individual values as needed. To create our configuration, we first set up the `config` instance and then load a template (`base_configuration`) from a dictionary. This template contains default values and placeholders that we need to replace during runtime. Here we expect the values for `DATABASE_URL`, `ENVIRONMENT` and `TOKEN_SECRET` to be replaced by values from the environment. Because these are security sensitive I have made them `required` so an exception will be raised if they are not provided.
 
-The complete `config` object is then passed as option to the `Core` provider when the relevant configuration sections are used to set up logging options. Likewise, the configured database url can be used to set up a database client instance.
-
 ```python
 # src/app/di_containers.py
-import logging.config
 from dependency_injector import containers, providers
 
 from app.config import base_configuration
-
-class Core(containers.DeclarativeContainer):
-    config = providers.Configuration()
-    logging = providers.Resource(
-        logging.config.dictConfig,
-        config=config.logging,
-    )
 
 class AppDependencies(containers.DeclarativeContainer):
 
@@ -50,18 +40,13 @@ class AppDependencies(containers.DeclarativeContainer):
     config.database.url.from_env("DATABASE_URL", required=True)
     config.environment.from_env("ENVIRONMENT", required=True)
     config.services.auth.secret.from_env("TOKEN_SECRET", required=True)
-
-    core = providers.Container(
-        Core,
-        config=config.core,
-    )
 ```
 
 ### Using the Dependency Container
 
-Import the new `AppDependencies` container, create an instance and initialize the dependencies with a call to `dependencies.core.init_resources()`. For the moment this is all we need to do. But once we have classes that require a dependency injected in our code we have to make the framework aware of these classes to the required instances can be provided at run time. We will cover this with the addition of our repositories and services.
+Import the new `AppDependencies` container, create an instance and initialize the dependencies with a call to `dependencies.init_resources()`. For the moment this is all we need to do. But once we have classes that require a dependency injected in our code we have to make the framework aware of these classes to the required instances can be provided at run time. We will cover this with the addition of our repositories and services.
 
-We don't yet have a class that requires dependency injection so to confirm that the dependencies are set up properly we replace `os.getenv` with `dependencies.config.environment()` to get the environment.
+We don't yet have a class that requires dependency injection so to confirm that the dependencies are set up properly we replace `os.getenv` with `dependencies.config.environment()` to get the value of the `environment` variable from the configuration provider.
 
 ```python
 # src/app/main.py
@@ -71,7 +56,7 @@ from app.adapters.graphql.graphql_app import GraphQLApp
 from app.di_containers import AppDependencies
 
 dependencies = AppDependencies()
-dependencies.core.init_resources()
+dependencies.init_resources()
 # TODO: dependency discovery
 
 app = FastAPI()
@@ -112,7 +97,7 @@ from app.di_containers import AppDependencies
 @pytest.fixture(scope="session")
 def dependencies():
     dependencies = AppDependencies()
-    dependencies.core.init_resources()
+    dependencies.init_resources()
     # TODO: dependency discovery
 
     yield dependencies
@@ -124,6 +109,10 @@ def client(dependencies):
 ```
 
 You can run the tests now to confirm that everything still works and that the `ENVIRONMENT` is set to `test` as required by the test. To prove that the value is provided via the set up dependencies you can modify the value in the `conftest.py` file and see the test fail.
+
+```python
+os.environ["ENVIRONMENT"] = "not_test"
+```
 
 ## Next Steps
 

@@ -1,23 +1,4 @@
 base_configuration = {
-    "core": {
-        "logging": {
-            "version": 1,
-            "formatters": {
-                "formatter": {
-                    "format": "[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s",
-                }
-            },
-        },
-        "handlers": {
-            "console": {
-                "class": "logging.StreamHandler",
-                "level": "DEBUG",
-                "formatter": "formatter",
-                "stream": "ext://sys.stderr",
-            }
-        },
-        "root": {"level": "DEBUG", "handlers": ["console"]},
-    },
     "database": {
         "url": "sqlite://:memory:",
     },

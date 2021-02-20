@@ -19,7 +19,7 @@ SPEC_REGEX = re.compile(r"\s?\[\D+-\d+\]\s?")
 @pytest.fixture(scope="session")
 def dependencies():
     dependencies = AppDependencies()
-    dependencies.core.init_resources()
+    dependencies.init_resources()
     # TODO: dependency discovery
 
     yield dependencies

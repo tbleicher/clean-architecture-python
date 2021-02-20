@@ -4,7 +4,7 @@ from app.adapters.graphql.graphql_app import GraphQLApp
 from app.di_containers import AppDependencies
 
 dependencies = AppDependencies()
-dependencies.core.init_resources()
+dependencies.init_resources()
 # TODO: dependency discovery
 
 
