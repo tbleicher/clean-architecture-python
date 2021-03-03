@@ -6,7 +6,9 @@ Dependency Injection is an essential element for Clean Architecture. It enables 
 
 In our example app, the business logic is implemented by _Use Cases_ at the core of our domain. Each use case depends on one or more _Services_ (also part of the core). Each service depends on a _Repository_ which is implemented in the outer layer based on a specific storage technology.
 
-While we can use _Interfaces_ to reverse the dependency of code we still need a mechanism to provide an instance of such an interface (repository) to the instance that depends on it (service/use case). A _Dependency Injection_ framework is such a mechanism.
+![Dependency Injection](./images/03_01_di_intro.svg)
+
+While we can use _Interfaces_ to reverse the dependency of code we still need a mechanism to provide an instance of such an interface (repository) to the instance that depends on it (service or use case). A _Dependency Injection_ framework is such a mechanism.
 
 ## Setup
 
