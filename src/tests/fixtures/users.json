@@ -1,0 +1,102 @@
+[
+  {
+    "id": "USER-ADM",
+    "email": "admin@example.com",
+    "first_name": "Admin",
+    "is_admin": true,
+    "organization_id": "",
+    "last_name": "SysAdmin",
+    "password_hash": "$2b$12$/bxSAKp5FLBWOs/zq4n8xOmoR2hlXaEQ/60I58xTfKpbYSQOF7N0i"
+  },
+  {
+    "id": "USER-CLOE",
+    "email": "cloe@example.com",
+    "first_name": "Cloe",
+    "is_admin": false,
+    "organization_id": "GROUP-SHOESTRING-LTD",
+    "last_name": "CEO",
+    "password_hash": "$2b$12$/bxSAKp5FLBWOs/zq4n8xOmoR2hlXaEQ/60I58xTfKpbYSQOF7N0i"
+  },
+  {
+    "id": "USER-MARY",
+    "email": "mary@example.com",
+    "first_name": "Mary",
+    "is_admin": false,
+    "organization_id": "GROUP-SHOESTRING-LTD",
+    "last_name": "CMO",
+    "password_hash": "$2b$12$/bxSAKp5FLBWOs/zq4n8xOmoR2hlXaEQ/60I58xTfKpbYSQOF7N0i"
+  },
+  {
+    "id": "USER-MARK",
+    "email": "mark@example.com",
+    "first_name": "Mark",
+    "is_admin": false,
+    "organization_id": "GROUP-SHOESTRING-LTD",
+    "last_name": "Marketing Assistant",
+    "password_hash": "$2b$12$/bxSAKp5FLBWOs/zq4n8xOmoR2hlXaEQ/60I58xTfKpbYSQOF7N0i"
+  },
+  {
+    "id": "USER-ENID",
+    "email": "enid@example.com",
+    "first_name": "Enid",
+    "is_admin": false,
+    "organization_id": "GROUP-SHOESTRING-LTD",
+    "last_name": "CTO",
+    "password_hash": "$2b$12$/bxSAKp5FLBWOs/zq4n8xOmoR2hlXaEQ/60I58xTfKpbYSQOF7N0i"
+  },
+  {
+    "id": "USER-DEVON",
+    "email": "devon@example.com",
+    "first_name": "Devon",
+    "is_admin": false,
+    "organization_id": "GROUP-SHOESTRING-LTD",
+    "last_name": "Programmer",
+    "password_hash": "$2b$12$/bxSAKp5FLBWOs/zq4n8xOmoR2hlXaEQ/60I58xTfKpbYSQOF7N0i"
+  },
+  {
+    "id": "USER-DELIA",
+    "email": "delia@example.com",
+    "first_name": "Delia",
+    "is_admin": false,
+    "organization_id": "GROUP-SHOESTRING-LTD",
+    "last_name": "Cloud Engineer",
+    "password_hash": "$2b$12$/bxSAKp5FLBWOs/zq4n8xOmoR2hlXaEQ/60I58xTfKpbYSQOF7N0i"
+  },
+  {
+    "id": "USER-RHYS",
+    "email": "rhys@example.com",
+    "first_name": "Rhys",
+    "is_admin": false,
+    "organization_id": "GROUP-SHOESTRING-LTD",
+    "last_name": "Office Manager",
+    "password_hash": "$2b$12$/bxSAKp5FLBWOs/zq4n8xOmoR2hlXaEQ/60I58xTfKpbYSQOF7N0i"
+  },
+
+  {
+    "id": "USER-BIG-STEVE",
+    "email": "steve@example.net",
+    "first_name": "Steve",
+    "is_admin": false,
+    "organization_id": "GROUP-BIG-DOLLAR",
+    "last_name": "CEO",
+    "password_hash": "$2b$12$/bxSAKp5FLBWOs/zq4n8xOmoR2hlXaEQ/60I58xTfKpbYSQOF7N0i"
+  },
+  {
+    "id": "USER-BIG-WARREN",
+    "email": "warren@example.net",
+    "first_name": "Warren",
+    "is_admin": false,
+    "organization_id": "GROUP-BIG-DOLLAR",
+    "last_name": "CFO",
+    "password_hash": "$2b$12$/bxSAKp5FLBWOs/zq4n8xOmoR2hlXaEQ/60I58xTfKpbYSQOF7N0i"
+  },
+  {
+    "id": "USER-BIG-ELON",
+    "email": "elon@example.net",
+    "first_name": "Elon",
+    "is_admin": false,
+    "organization_id": "GROUP-BIG-DOLLAR",
+    "last_name": "CTO",
+    "password_hash": "$2b$12$/bxSAKp5FLBWOs/zq4n8xOmoR2hlXaEQ/60I58xTfKpbYSQOF7N0i"
+  }
+]

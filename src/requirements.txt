@@ -22,6 +22,7 @@ py==1.10.0
 pydantic==1.7.3
 pyparsing==2.4.7
 pytest==6.2.0
+pytest-asyncio==0.14.0
 regex==2020.11.13
 requests==2.25.0
 Rx==1.6.1
