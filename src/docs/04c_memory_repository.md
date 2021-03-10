@@ -1,6 +1,6 @@
 # 4. First Use Case
 
-## 4c. In-Memory UserRepository implementation
+## 4c. In-Memory UserRepository Implementation
 
 To illustrate the basics of the repository we will first implement a variation that keeps all data in memory. We can do this with basic Python objects and don't have to worry about the underlying details of the storage medium. An in-memory implementation will also be useful for testing because we don't have to set up external dependencies like a database.
 

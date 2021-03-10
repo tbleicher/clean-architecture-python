@@ -9,6 +9,16 @@ In this repo I will build up a GraphQL server in Python based on [Clean Architec
 2. [Testing](./src/docs/02_testing.md)
 3. [Dependency Injection](./src/docs/03_dependency_injection.md)
 4. The first Use Case
+
+- a) [Domain Entities](./src/docs/04a_entities.md)
+- b) [UserRepository Interface](./src/docs/04b_repository_interface.md)
+- c) [In-Memory UserRepository Implementation](./src/docs/04c_memory_repository.md)
+- d) [UserService](./src/docs/04d_user_service.md)
+- e) Use Case Logic
+- d) GraphQL Resolvers
+- f) Dependencies Setup
+- g) Integration Tests
+
 5. Authorisation
 6. ... and some more
 

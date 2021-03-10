@@ -7,6 +7,8 @@ from .entities import NewUserDTO, User
 
 
 class UserRepositoryInterface(metaclass=abc.ABCMeta):
+    """definition of the UserRepository interface"""
+
     @classmethod
     def __subclasshook__(cls, subclass):
         return implements_interface(cls, subclass) or NotImplemented
@@ -44,4 +46,18 @@ class UserRepositoryInterface(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     async def update_user(self, user: User) -> User:
         """update an existing user in storage"""
+        raise NotImplementedError
+
+
+class UserServiceInterface(UserRepositoryInterface):
+    """definition of the UserService interface"""
+
+    @abc.abstractmethod
+    async def get_user_by_email(self, email: str) -> Optional[User]:
+        """find and return one user via the user's email"""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def save_new_user(self, data: NewUserDTO) -> User:
+        """check email for uniqueness, create new record and return user"""
         raise NotImplementedError
