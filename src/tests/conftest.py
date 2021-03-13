@@ -27,6 +27,11 @@ def all_users():
 
 
 @pytest.fixture(scope="session")
+def config(dependencies):
+    yield dependencies.config()
+
+
+@pytest.fixture(scope="session")
 def dependencies():
     dependencies = AppDependencies()
     dependencies.init_resources()

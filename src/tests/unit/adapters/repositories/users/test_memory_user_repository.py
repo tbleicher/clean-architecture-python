@@ -2,7 +2,7 @@ import pytest
 
 from app.adapters.repositories.users.memory_user_repository import MemoryUserRepository
 from app.domain.users.entities import NewUserDTO, User
-from app.di_containers import AppDependencies
+
 
 new_user_data = {
     "first_name": "First",
@@ -13,56 +13,44 @@ new_user_data = {
     "is_admin": False,
 }
 
-non_test_env = {
-    "environment": "not_test",
-    "repositories": {
-        "fixtures": {
-            "users": "tests/fixtures/users.json",
-        }
-    },
-}
-
-no_fixture_path = {
-    "environment": "test",
-    "repositories": {"fixtures": {}},
-}
-
 
 class TestMemoryUserRepository:
     """adapters.repositories.memory_user_repository"""
 
-    def test_memory_user_repository_instance(self, dependencies, all_users):
+    def test_memory_user_repository_instance(self, config, all_users):
         """[REPO-US-MEM-01] memory repository instance requires a configuration object"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
 
         assert len(repo._users) == len(all_users)
 
     def test_memory_user_repository_non_test_env(self):
         """[REPO-US-MEM-02] memory repository does only load fixtures in test environment"""
-        dependencies = AppDependencies()
-        dependencies.init_resources()
-        dependencies.config.from_dict(non_test_env)
-
-        repo = MemoryUserRepository(dependencies.config)
+        config_not_test_env = {
+            "environment": "not_test",
+            "repositories": {
+                "fixtures": {
+                    "users": "tests/fixtures/users.json",
+                }
+            },
+        }
+        repo = MemoryUserRepository(config_not_test_env)
 
         assert len(repo._users) == 0
 
     def test_memory_user_repository_without_fixture_path(self):
         """[REPO-US-MEM-03] memory repository does not load fixtures without fixture path"""
-        dependencies = AppDependencies()
-        dependencies.init_resources()
-        dependencies.config.from_dict(no_fixture_path)
-
-        repo = MemoryUserRepository(dependencies.config)
+        config_no_fixture_path = {
+            "environment": "test",
+            "repositories": {"fixtures": {}},
+        }
+        repo = MemoryUserRepository(config_no_fixture_path)
 
         assert len(repo._users) == 0
 
     @pytest.mark.asyncio
-    async def test_memory_user_repository_find_all_returns_list_of_users(
-        self, dependencies
-    ):
+    async def test_memory_user_repository_find_all_returns_list_of_users(self, config):
         """[REPO-US-MEM-11] repo.find_all returns a list of User entities"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         repo_users = await repo.find_all()
 
         assert isinstance(repo_users, list)
@@ -70,20 +58,20 @@ class TestMemoryUserRepository:
 
     @pytest.mark.asyncio
     async def test_memory_user_repository_find_all_returns_all_users(
-        self, dependencies, all_users
+        self, config, all_users
     ):
         """[REPO-US-MEM-12] repo.find_all returns all users"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         repo_users = await repo.find_all()
 
         assert len(repo_users) == len(all_users)
 
     @pytest.mark.asyncio
     async def test_memory_user_repository_get_user_by_id_returns_users(
-        self, dependencies, all_users
+        self, config, all_users
     ):
         """[REPO-US-MEM-21] repo.get_user_by_id returns a User"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         user = await repo.get_user_by_id(all_users[0]["id"])
 
         assert user is not None
@@ -91,21 +79,19 @@ class TestMemoryUserRepository:
         assert user.id == all_users[0]["id"]
 
     @pytest.mark.asyncio
-    async def test_memory_user_repository_get_user_by_id_returns_none(
-        self, dependencies
-    ):
+    async def test_memory_user_repository_get_user_by_id_returns_none(self, config):
         """[REPO-US-MEM-22] repo.get_user_by_id returns all users"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         user = await repo.get_user_by_id("no-such-id")
 
         assert user is None
 
     @pytest.mark.asyncio
     async def test_memory_user_repository_get_user_by_id_returns_a_list_of_users(
-        self, dependencies, all_users
+        self, config, all_users
     ):
         """[REPO-US-MEM-31] repo.get_users_by_ids returns a list of users"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         user_ids = [all_users[0]["id"], all_users[2]["id"], all_users[7]["id"]]
         users = await repo.get_users_by_ids(user_ids)
 
@@ -114,10 +100,10 @@ class TestMemoryUserRepository:
 
     @pytest.mark.asyncio
     async def test_memory_user_repository_get_users_by_ids_returns_exiting_users(
-        self, dependencies, all_users
+        self, config, all_users
     ):
         """[REPO-US-MEM-32] repo.get_users_by_ids returns users for valid ids"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         user_ids = [all_users[0]["id"], "no-such-id", all_users[7]["id"]]
         users = await repo.get_users_by_ids(user_ids)
 
@@ -127,10 +113,10 @@ class TestMemoryUserRepository:
 
     @pytest.mark.asyncio
     async def test_memory_user_repository_get_users_by_ids_returns_empty_list(
-        self, dependencies
+        self, config
     ):
         """[REPO-US-MEM-33] repo.get_users_by_ids returns empty list with no valid ids"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         user_ids = ["apples-and-pears", "no-such-id", "does-not-exist"]
         users = await repo.get_users_by_ids(user_ids)
 
@@ -139,10 +125,10 @@ class TestMemoryUserRepository:
 
     @pytest.mark.asyncio
     async def test_memory_user_repository_find_users_by_attributes_returns_list_of_users(
-        self, dependencies
+        self, config
     ):
         """[REPO-US-MEM-41] repo.find_users_by_attributes returns a list of users"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         attributes = {
             "organization_id": "GROUP-SHOESTRING-LTD",
         }
@@ -153,10 +139,10 @@ class TestMemoryUserRepository:
 
     @pytest.mark.asyncio
     async def test_memory_user_repository_find_users_by_attributes_returns_selection_of_users(
-        self, dependencies, all_users
+        self, config, all_users
     ):
         """[REPO-US-MEM-42] repo.find_users_by_attributes returns a selection of users"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         attributes = {
             "organization_id": "GROUP-SHOESTRING-LTD",
         }
@@ -171,10 +157,10 @@ class TestMemoryUserRepository:
 
     @pytest.mark.asyncio
     async def test_memory_user_repository_find_users_by_attributes_returns_an_empty_list(
-        self, dependencies
+        self, config
     ):
         """[REPO-US-MEM-43] repo.find_users_by_attributes returns an empty list if no users are found"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         attributes = {
             "organization_id": "NO-SUCH_ID",
         }
@@ -184,11 +170,9 @@ class TestMemoryUserRepository:
         assert len(users) == 0
 
     @pytest.mark.asyncio
-    async def test_memory_user_repository_save_new_user_returns_new_user(
-        self, dependencies
-    ):
+    async def test_memory_user_repository_save_new_user_returns_new_user(self, config):
         """[REPO-US-MEM-51] repo.save_new_user creates new user from NewUserDTO entity"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         data = NewUserDTO(**new_user_data)
         user = await repo.save_new_user(data)
 
@@ -196,10 +180,10 @@ class TestMemoryUserRepository:
 
     @pytest.mark.asyncio
     async def test_memory_user_repository_save_new_user_adds_data_to_storage(
-        self, dependencies, all_users
+        self, config, all_users
     ):
         """[REPO-US-MEM-52] repo.save_new_user adds new user record to storage"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         data = NewUserDTO(**new_user_data)
         await repo.save_new_user(data)
 
@@ -207,10 +191,10 @@ class TestMemoryUserRepository:
 
     @pytest.mark.asyncio
     async def test_memory_user_repository_update_user_stores_new_user_data(
-        self, dependencies, all_users
+        self, config, all_users
     ):
         """[REPO-US-MEM-61] repo.update_user saves new user data to storage"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         user1 = await repo.get_user_by_id(all_users[1]["id"])
         user2 = User.parse_obj({**user1.dict(), "email": f"updated_{user1.email}"})
         user3 = await repo.update_user(user2)
@@ -221,10 +205,10 @@ class TestMemoryUserRepository:
 
     @pytest.mark.asyncio
     async def test_memory_user_repository_update_user_raises_value_error(
-        self, dependencies, all_users
+        self, config, all_users
     ):
         """[REPO-US-MEM-62] repo.update_user raises ValueError when user id is not found"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         user1 = await repo.get_user_by_id(all_users[1]["id"])
         user2 = User.parse_obj(
             {**user1.dict(), "email": f"updated_{user1.email}", "id": "no-such-id"}
@@ -235,10 +219,10 @@ class TestMemoryUserRepository:
 
     @pytest.mark.asyncio
     async def test_memory_user_repository_delete_user_removes_record_from_storage(
-        self, dependencies, all_users
+        self, config, all_users
     ):
         """[REPO-US-MEM-71] repo.delete_user removes user with the given id"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
 
         user1 = await repo.get_user_by_id(all_users[1]["id"])
         assert isinstance(user1, User)
@@ -252,11 +236,9 @@ class TestMemoryUserRepository:
         assert len(repo._users) == len(all_users) - 1
 
     @pytest.mark.asyncio
-    async def test_memory_user_repository_delete_user_raises_value_error(
-        self, dependencies
-    ):
+    async def test_memory_user_repository_delete_user_raises_value_error(self, config):
         """[REPO-US-MEM-72] repo.delete_user raises ValueError when user id is not found"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
 
         with pytest.raises(ValueError):
             await repo.delete_user("no-such-id")
