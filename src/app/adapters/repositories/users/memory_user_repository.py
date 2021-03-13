@@ -1,7 +1,5 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 from uuid import uuid4
-
-from dependency_injector import providers
 
 from app.domain.users.entities import NewUserDTO, User
 from app.domain.users.interfaces import UserRepositoryInterface
@@ -10,11 +8,14 @@ from ..utils import filter_entities_by_attributes, load_fixtures
 
 
 class MemoryUserRepository(UserRepositoryInterface):
-    def __init__(self, configuration: providers.Configuration):
+    """in-memory implementation of UserRepository"""
+
+    def __init__(self, config: dict[str, Any]):
+        """set up dict as 'storage' and load fixtures based on config"""
         self._users: dict[str, dict] = {}
 
-        environment = configuration.environment()
-        fixtures = configuration.repositories.fixtures()
+        environment = config["environment"]
+        fixtures = config["repositories"]["fixtures"]
 
         # load test data from fixture file when running tests
         if environment == "test" and "users" in fixtures:

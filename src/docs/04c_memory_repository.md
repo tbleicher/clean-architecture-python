@@ -4,25 +4,27 @@
 
 To illustrate the basics of the repository we will first implement a variation that keeps all data in memory. We can do this with basic Python objects and don't have to worry about the underlying details of the storage medium. An in-memory implementation will also be useful for testing because we don't have to set up external dependencies like a database.
 
-While the memory implementation has no external dependencies, we want to pass in the configuration provider from our AppDependencies. We can then use the configuration to load test data (_fixtures_) when the repository is created.
+While the memory implementation has no external dependencies, we want to pass in the configuration from our AppDependencies. We can then use the configuration to load test data (_fixtures_) when the repository is created.
 
 The skeleton of our `MemoryUserRepository` should look like this:
 
 ```python
 # app/adapters/repositories/users/memory_user_repository.py
 from typing import List, Optional
-from dependency_injector import providers
 
 from app.domain.users.entities import User
 from app.domain.users.interfaces import UserRepositoryInterface
 
 class MemoryUserRepository(UserRepositoryInterface):
-    def __init__(self, configuration: providers.Configuration):
+     """in-memory implementation of UserRepository"""
+
+    def __init__(self, config: dict[str, Any]):
+        """set up dict as 'storage' and load fixtures based on config"""
         self._users: dict[str, dict] = {}
 
         # load test data from fixture file when running tests
-        environment = configuration.environment()
-        fixtures = configuration.repositories.fixtures()
+        environment = config["environment"]
+        fixtures = config["repositories"]["fixtures"]
 
         if environment == "test" and "users" in fixtures:
             print("\nENV: %s" % environment)
@@ -52,13 +54,13 @@ class MemoryUserRepository(UserRepositoryInterface):
 
 > The class is a subclass of `UserRepositoryInterface` which requires it to implement stubs for all methods that are defined by the interface. Without this we would get errors when running our tests.
 
-For now let's just focus on the `__init__` method. We have defined one argument called `configuration` which is of type `providers.Configuration`. At runtime the DI framework will inject the `AppDependencies.config` object with the configuration that we set up in the `di_containers.py` and the `conftest.py` file.
+For now let's just focus on the `__init__` method. We have defined one argument called `config` which is of type `dict[str, Any]`. At runtime the DI framework will inject the _value_ of the `AppDependencies.config` provider which is a nested `dict` object. The shape and default values of this nested dict is set up in `config.py` and critical values are overwritten in `di_containers.py` and `conftest.py` from the environment variables.
 
 As storage we use a plain Python dictionary that maps the user's id to the the user data object (also a Python dictionary). The interface does not define how the data is stored. The only requirement is that we convert the raw data to a `User` object when we return it.
 
 ### Setting up the Test environment
 
-For testing we already have overwritten the `environment` config setting to 'test'. Now we need to add a value for the fixtures path:
+For testing we already have overwritten the `environment` config setting to 'test'. Now we need to add a value for the fixtures path.
 
 ```python
 # tests/conftest.py
@@ -79,9 +81,17 @@ def dependencies():
     yield dependencies
 ```
 
-Note that we still haven't enabled the dependencies discovery. To test the repository we have to provide an instance of the config object to the constructor when we create a new instance. Luckily our dependencies are already set up as a test fixture that we can inject in the test case.
+Note that we still haven't enabled the dependencies discovery. In the unit tests we will create instances of the _MemoryUserRepository_ outside of the DI framework so the framework does not have to be aware of those instances. We will have to provide the configuration from the `dependencies` instance to the constructor, though.
 
-Let's add our first test case to confirm that the configuration is applied properly. Our requirement is this:
+The `dependencies.config` container is a tree of _Providers_ that can be accessed as attributes of their parent node (see the `dependencies.config.repositories.fixtures` example above). If we want to get the value, we can invoke the `config` node directly which will return a nested dict with the current configuration. We can define another Pytest fixture to provide this object consistently to all tests.
+
+```
+@pytest.fixture(scope="session")
+def config(dependencies):
+    yield dependencies.config()
+```
+
+Now we add our first test case to confirm that the configuration is applied properly. Our requirement is this:
 
 - **REPO-US-MEM-01:** memory repository instance requires a configuration object
 
@@ -92,10 +102,10 @@ from app.adapters.repositories.users.memory_user_repository import MemoryUserRep
 class TestMemoryUserRepository:
     """adapters.repositories.memory_user_repository"""
 
-    def test_memory_user_repository_instance(self, dependencies, capsys):
+    def test_memory_user_repository_instance(self, config, capsys):
         """[REPO-US-MEM-01] memory repository requires a configuration object"""
         with capsys.disabled():
-            repo = MemoryUserRepository(dependencies.config)
+            repo = MemoryUserRepository(config)
 
             assert len(repo._users) == 0
 ```
@@ -190,9 +200,9 @@ Now the new fixture gives us access to the user data in our repo:
 ```python
 # tests/unit/adapters/repositories/users/test_memory_user_repository.py
 ...
-    def test_memory_user_repository_instance(self, dependencies, all_users):
+    def test_memory_user_repository_instance(self, config, all_users):
         """[REPO-US-MEM-01] memory repository instance requires a configuration object"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
 
         assert len(repo._users) == len(all_users)
 ```
@@ -206,51 +216,34 @@ The automatic loading of fixtures also has a flip side: If we are not in the 'te
 - **REPO-US-MEM-02:** memory repository does only load fixtures in test environment
 - **REPO-US-MEM-03:** memory repository does not load fixtures without fixture path
 
-Testing this follows the same logic, but we can't use our `dependencies` test fixture. We have to create a local instance and overwrite the settings according to our test. Here is the test where we set the `environment` to a string other than `test`. We also have to set the fixture path because we don't want a missing path to affect the outcome of our test.
+Testing this follows the same logic. We create a nested `config` dict but set the `environment` to a string other than `test`. We also have to set the fixture path because we don't want a missing path to affect the outcome of our test.
 
 ```python
-# tests/unit/adapters/repositories/users/test_memory_user_repository.py
-from app.adapters.repositories.users.memory_user_repository import MemoryUserRepository
-from app.di_containers import AppDependencies
-
-non_test_env = {
-    "environment": "not_test",
-    "repositories": {
-        "fixtures": { "users": "tests/fixtures/users.json", }
-    },
-}
-
-class TestMemoryUserRepository:
-    ...
-
     def test_memory_user_repository_non_test_env(self):
         """[REPO-US-MEM-02] memory repository does only load fixtures in test environment"""
-        dependencies = AppDependencies()
-        dependencies.init_resources()
-        dependencies.config.from_dict(non_test_env)
-
-        repo = MemoryUserRepository(dependencies.config)
+        config_not_test_env = {
+            "environment": "not_test",
+            "repositories": {
+                "fixtures": {
+                    "users": "tests/fixtures/users.json",
+                }
+            },
+        }
+        repo = MemoryUserRepository(config_not_test_env)
 
         assert len(repo._users) == 0
 ```
 
-Likewise we can remove the fixture path from the configuration:
+Likewise we can remove the fixture path but keep the environment set to `test`:
 
 ```python
-...
-no_fixture_path = {
-    "environment": "test",
-    "repositories": {"fixtures": {}},
-}
-
-...
     def test_memory_user_repository_without_fixture_path(self):
         """[REPO-US-MEM-03] memory repository does not load fixtures without fixture path"""
-        dependencies = AppDependencies()
-        dependencies.init_resources()
-        dependencies.config.from_dict(no_fixture_path)
-
-        repo = MemoryUserRepository(dependencies.config)
+        config_no_fixture_path = {
+            "environment": "test",
+            "repositories": {"fixtures": {}},
+        }
+        repo = MemoryUserRepository(config_no_fixture_path)
 
         assert len(repo._users) == 0
 ```
@@ -277,10 +270,10 @@ from app.domain.users.entities import User
 ...
     @pytest.mark.asyncio
     async def test_memory_user_repository_find_all_returns_list_of_users(
-        self, dependencies
+        self, config
     ):
         """[REPO-US-MEM-11] repo.find_all returns a list of User entities"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         repo_users = await repo.find_all()
 
         assert isinstance(repo_users, list)
@@ -306,10 +299,10 @@ Finally we can add a test to check that the right number of users are returned:
 ```python
     @pytest.mark.asyncio
     async def test_memory_user_repository_find_all_returns_all_users(
-        self, dependencies, all_users
+        self, config, all_users
     ):
         """[REPO-US-MEM-12] repo.find_all returns all users"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         repo_users = await repo.find_all()
 
         assert len(repo_users) == len(all_users)
@@ -322,10 +315,10 @@ With the `find_all` method as template we can quickly set up tests for the `get_
 ```python
     @pytest.mark.asyncio
     async def test_memory_user_repository_get_user_by_id_returns_users(
-        self, dependencies, all_users
+        self, config, all_users
     ):
         """[REPO-US-MEM-21] repo.get_user_by_id returns a User"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         user = await repo.get_user_by_id(all_users[0]["id"])
 
         assert user is not None
@@ -334,10 +327,10 @@ With the `find_all` method as template we can quickly set up tests for the `get_
 
     @pytest.mark.asyncio
     async def test_memory_user_repository_get_user_by_id_returns_none(
-        self, dependencies
+        self, config
     ):
         """[REPO-US-MEM-22] repo.get_user_by_id returns all users"""
-        repo = MemoryUserRepository(dependencies.config)
+        repo = MemoryUserRepository(config)
         user = await repo.get_user_by_id("no-such-id")
 
         assert user is None
