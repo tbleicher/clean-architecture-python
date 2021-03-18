@@ -10,7 +10,7 @@ os.environ["DATABASE_URL"] = "sqlite://:memory:"
 os.environ["TOKEN_SECRET"] = "used to sign tokens"
 
 from app.adapters.repositories.utils import load_fixtures
-from app import main
+from app import domain, main
 from app.di_containers import AppDependencies
 
 SPEC_REGEX = re.compile(r"\s?\[\D+-\d+\]\s?")
@@ -36,13 +36,14 @@ def dependencies():
     dependencies = AppDependencies()
     dependencies.init_resources()
     dependencies.config.repositories.fixtures.from_dict(fixtures)
-    # TODO: dependency discovery
+    # dependency discovery
+    dependencies.wire(packages=[domain])
 
     yield dependencies
 
 
 @pytest.fixture(scope="module")
-def client():
+def client(dependencies):
     with TestClient(main.app) as client:
         yield client
 
