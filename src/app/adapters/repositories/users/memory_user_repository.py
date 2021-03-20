@@ -1,7 +1,7 @@
 from typing import Any, List, Optional
 from uuid import uuid4
 
-from app.domain.users.entities import NewUserDTO, User
+from app.domain.users.entities import AuthUser, NewUserDTO, User
 from app.domain.users.interfaces import UserRepositoryInterface
 
 from ..utils import filter_entities_by_attributes, load_fixtures
@@ -31,7 +31,13 @@ class MemoryUserRepository(UserRepositoryInterface):
         users = filter_entities_by_attributes(self._users, attributes)
         return [User(**user) for user in users]
 
+    async def get_auth_user_by_email(self, email: str) -> Optional[AuthUser]:
+        """find and return one user via the user's email address"""
+        users = filter_entities_by_attributes(self._users, {"email": email})
+        return AuthUser(**users[0]) if len(users) > 0 else None
+
     async def get_user_by_id(self, id: str) -> Optional[User]:
+        """find and return one user via the user's id"""
         return User(**self._users[id]) if id in self._users else None
 
     async def get_users_by_ids(self, ids: List[str]) -> List[User]:

@@ -3,13 +3,15 @@ import json
 from typing import Any, List
 
 
-def filter_entities_by_attributes(data: dict[str, dict], attributes: dict[str, Any]):
+def filter_entities_by_attributes(
+    data: dict[str, dict], attributes: dict[str, Any]
+) -> List[Any]:
     _set = data.values()
 
     for key, value in attributes.items():
         _set = [entity for entity in _set if entity[key] == value]
 
-    return _set
+    return list(_set)
 
 
 def load_fixtures(fixtures_path: str) -> List[dict[str, str]]:

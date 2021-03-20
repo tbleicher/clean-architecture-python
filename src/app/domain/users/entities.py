@@ -1,6 +1,19 @@
 from pydantic import BaseModel
 
 
+class AuthUser(BaseModel):
+    """limited user data object with password hash"""
+
+    id: str
+    email: str
+    password_hash: str
+    organization_id: str
+    is_admin: bool
+
+    class Config:
+        allow_mutation = False
+
+
 class NewUserDTO(BaseModel):
     """data to create a new user"""
 
@@ -9,6 +22,18 @@ class NewUserDTO(BaseModel):
     last_name: str
     organization_id: str
     password_hash: str
+    is_admin: bool
+
+    class Config:
+        allow_mutation = False
+
+
+class SessionUser(BaseModel):
+    """user data extracted from access token"""
+
+    id: str
+    email: str
+    organization_id: str
     is_admin: bool
 
     class Config:

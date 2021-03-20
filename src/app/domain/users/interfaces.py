@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from app.domain.utils import implements_interface
 
-from .entities import NewUserDTO, User
+from .entities import AuthUser, NewUserDTO, User
 
 
 class UserRepositoryInterface(metaclass=abc.ABCMeta):
@@ -21,6 +21,11 @@ class UserRepositoryInterface(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     async def find_users_by_attributes(self, attributes: dict) -> List[User]:
         """return list of users with given attribute values"""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def get_auth_user_by_email(self, email: str) -> Optional[AuthUser]:
+        """find and return one user via the user's email address"""
         raise NotImplementedError
 
     @abc.abstractmethod

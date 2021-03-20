@@ -142,12 +142,12 @@ To test our GraphQL endpoint, we don't need a GraphQL client. We can just send o
 
 ```python
 class TestGraphQLHealthCheckQuery:
-    """GraphQL healthcheck"""
+    """GraphQL.query.healthcheck"""
 
     query = "query HealthCheck($name: String) { healthcheck(name: $name) }"
 
     def test_graphql_healthcheck_response(self, client):
-        """[GQL-HC-01] 'healthcheck' returns a default greeting"""
+        """[GQL-HC-01] returns a default greeting"""
         json = {
             "query": self.query,
         }
@@ -161,7 +161,7 @@ If we need to pass variables to the query we add them to the JSON object:
 
 ```python
     def test_graphql_healthcheck_with_data(self, client):
-        """[GQL-HC-02] 'healthcheck' returns a custom greeting with 'name' variable"""
+        """[GQL-HC-02] returns a custom greeting with 'name' variable"""
         json = {
             "query": self.query,
             "variables": {"name": "Test"}

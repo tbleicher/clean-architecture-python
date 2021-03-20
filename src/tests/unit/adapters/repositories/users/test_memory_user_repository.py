@@ -1,7 +1,7 @@
 import pytest
 
 from app.adapters.repositories.users.memory_user_repository import MemoryUserRepository
-from app.domain.users.entities import NewUserDTO, User
+from app.domain.users.entities import AuthUser, NewUserDTO, User
 
 
 new_user_data = {
@@ -242,3 +242,25 @@ class TestMemoryUserRepository:
 
         with pytest.raises(ValueError):
             await repo.delete_user("no-such-id")
+
+    @pytest.mark.asyncio
+    async def test_memory_user_repository_get_auth_user_by_email_returns_users(
+        self, config, all_users
+    ):
+        """[REPO-US-MEM-81] repo.get_auth_user_by_email returns an AuthUser"""
+        repo = MemoryUserRepository(config)
+        user = await repo.get_auth_user_by_email(all_users[0]["email"])
+
+        assert user is not None
+        assert isinstance(user, AuthUser)
+        assert user.email == all_users[0]["email"]
+
+    @pytest.mark.asyncio
+    async def test_memory_user_repository_get_auth_user_by_email_returns_none(
+        self, config
+    ):
+        """[REPO-US-MEM-82] repo.get_auth_user_by_email returns None if not found"""
+        repo = MemoryUserRepository(config)
+        user = await repo.get_auth_user_by_email("no-such-email")
+
+        assert user is None

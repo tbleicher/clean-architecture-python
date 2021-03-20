@@ -23,5 +23,6 @@ class AppDependencies(containers.DeclarativeContainer):
 
     services = providers.Container(
         Services,
+        config=config,
         repositories=repositories,
     )

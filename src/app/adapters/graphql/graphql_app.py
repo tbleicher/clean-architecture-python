@@ -3,9 +3,10 @@ import starlette.graphql
 
 from graphql.execution.executors.asyncio import AsyncioExecutor
 
+from .mutation import Mutation
 from .query import Query
 
-schema = graphene.Schema(query=Query)
+schema = graphene.Schema(mutation=Mutation, query=Query)
 
 
 class GraphQLApp(starlette.graphql.GraphQLApp):

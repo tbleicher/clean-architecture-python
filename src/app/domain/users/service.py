@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from .entities import NewUserDTO, User
+from .entities import AuthUser, NewUserDTO, User
 from .interfaces import UserRepositoryInterface, UserServiceInterface
 
 
@@ -17,6 +17,10 @@ class UserService(UserServiceInterface):
     async def find_users_by_attributes(self, attributes: dict) -> List[User]:
         """return list of users with given attribute values"""
         return await self._repository.find_users_by_attributes(attributes)
+
+    async def get_auth_user_by_email(self, email: str) -> Optional[AuthUser]:
+        """find and return AuthUser via the user's email"""
+        return await self._repository.get_auth_user_by_email(email)
 
     async def get_user_by_email(self, email: str) -> Optional[User]:
         """find and return one user via the user's email"""
