@@ -7,9 +7,6 @@ from app.domain.auth.entities import LoginInputDTO
 from app.domain.auth.errors import AuthError
 from app.domain.auth.service import AuthService
 
-# token for user data signed with 'secret'
-TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLWlkIiwidXNlciI6eyJpZCI6InVzZXItaWQiLCJlbWFpbCI6ImZpcnN0bGFzdEBleGFtcGxlLmNvbSIsIm9yZ2FuaXphdGlvbl9pZCI6IkV4YW1wbGUgTHRkLiIsImlzX2FkbWluIjpmYWxzZX0sImV4cCI6MTYxNjI3MzYxOH0.Irg98MjrrI-hmkSzxUHVSzFOBErQK7RFbx2EZ2puH6I"
-TOKEN_BROKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJz...xOH0.Irg98MjrrI-hmkSzxUHVSzFOBErQK7RFbx2EZ2puH6I"
 
 user_data = {
     "id": "user-id",
@@ -87,17 +84,21 @@ class TestAuthService:
         assert token_user["organization_id"] == user.organization_id
         assert token_user["is_admin"] == user.is_admin
 
-    def test_auth_service_get_session_user(self, mock_user_repository):
+    def test_auth_service_get_session_user_from_token(self, mock_user_repository):
         """[DOM-SRV-AU-21] service.get_token returns a SessionUser from the token"""
         service = AuthService(config=config, repository=mock_user_repository)
-        session_user = service.get_session_user(TOKEN)
+        token = service.get_token(user)
+        session_user = service.get_session_user_from_token(token)
 
         assert session_user.id == user.id
         assert session_user.email == user.email
 
-    def test_auth_service_get_session_user_with_error(self, mock_user_repository):
+    def test_auth_service_get_session_user_from_token_with_error(
+        self, mock_user_repository
+    ):
         """[DOM-SRV-AU-22] service.get_token returns None when token is not valid"""
         service = AuthService(config=config, repository=mock_user_repository)
-        session_user = service.get_session_user(TOKEN_BROKEN)
+        token = service.get_token(user)
+        session_user = service.get_session_user_from_token(token[0 : len(token) - 5])
 
         assert session_user is None
