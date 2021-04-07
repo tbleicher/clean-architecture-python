@@ -132,6 +132,19 @@ it up for more details:
 For the moment we are only interested in the `AuthService` class itself and the `authenticate_user` method.
 
 ```python
+# app/domain/users/entities.py
+
+class SessionUser(BaseModel):
+    """user data extracted from access token"""
+
+    id: str
+    email: str
+    organization_id: str
+    is_admin: bool
+
+    class Config:
+        allow_mutation = False
+
 # app/domain/auth/service.py
 
 class AuthService(AuthServiceInterface):
@@ -155,15 +168,18 @@ class AuthService(AuthServiceInterface):
         return TokenDataDTO(token=token)
 
     def get_token(self, user) -> str:
-        """create token with user data as payload"""
-        payload = {"sub": user.id, "user": get_token_user(user)}
+        """create token with session user data as payload"""
+        session_user = SessionUser.parse_obj(user.dict())
+        payload = {"sub": user.id, "user": session_user.dict()}
 
         return create_access_token(payload, self.config)
 ```
 
-The first two blocks in the `authenticate_user` method lookup the user and validate the provided password against the stored password hash. If there is no user or the password does not match we raise a custom `AuthError` with a message to inform the user.
+The first two blocks in the `authenticate_user` method lookup the user and validate the provided password against the stored password hash. If there is no user or the password does not match we raise a custom `AuthError` to inform the user.
 
-If the user has been authenticated we generate a password based on the user's data. We use the `get_token_user` function to filter the user attributes that we want to include in the token. The token generation is handed to a dedicated method (`get_token`). This is not only cleaner but it also gives us a way to generate tokens for our tests.
+If the user has been authenticated we generate a token based on the user's data. The token generation is handled by a dedicated method (`get_token`). This is not only cleaner but it also gives us a way to generate tokens for a given user for our tests.
+
+We use the `SessionUser` entity (defined in `domain.users`) to enforce and limit the user attributes that we want to include in the token. Only the attributes that make up the SessionUser will be part of the token data. As a side effect we also can generate a `SessionUser` entity from the data in a valid token.
 
 ### Dependency setup
 

@@ -52,3 +52,15 @@ class User(BaseModel):
 
     class Config:
         allow_mutation = False
+
+
+class UserProfile(BaseModel):
+    """profile data for the currently logged in user"""
+
+    id: str
+    email: str
+    organization_id: str
+    is_admin: bool
+
+    class Config:
+        allow_mutation = False
