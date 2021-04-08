@@ -10,6 +10,7 @@ os.environ["DATABASE_URL"] = "sqlite://:memory:"
 os.environ["TOKEN_SECRET"] = "used to sign tokens"
 
 from app.adapters.repositories.utils import load_fixtures
+from app.domain.users.entities import AuthUser
 from app import domain, main
 from app.di_containers import AppDependencies
 
@@ -18,6 +19,14 @@ SPEC_REGEX = re.compile(r"\s?\[\D+-\d+\]\s?")
 fixtures = {
     "users": "tests/fixtures/users.json",
 }
+
+
+def get_fixture_by_id(collection, id):
+    """return element with given id from collection"""
+    for item in collection:
+        if item["id"] == id:
+            return item
+    raise ValueError(f"id '{id}' not found")
 
 
 @pytest.fixture(scope="session")
@@ -46,6 +55,18 @@ def dependencies():
 def client(dependencies):
     with TestClient(main.app) as client:
         yield client
+
+
+@pytest.fixture(scope="session")
+def get_auth_headers(dependencies, all_users):
+    def get_auth_headers(user_id):
+        auth_service = dependencies.services.auth_service()
+        user = get_fixture_by_id(all_users, user_id)
+        token = auth_service.get_token(AuthUser.parse_obj(user))
+
+        return {"authorization": f"Bearer {token}"}
+
+    return get_auth_headers
 
 
 def get_spec_id(prefix: str = "", description: str = "") -> str:

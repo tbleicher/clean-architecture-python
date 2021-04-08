@@ -1,4 +1,4 @@
-class TestGraphQLHealthCheckQuery:
+class TestGraphQLUsersQuery:
     """GraphQL.query.users"""
 
     query = "query QueryUsers { users { id email } }"

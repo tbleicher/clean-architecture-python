@@ -259,4 +259,80 @@ As expected, the returned data identifies the user as `admin@example.com`. Our `
 
 ### Authentication Token for Automated Testing
 
+Now that we have confirmed that the `profile` query endpoint works we can add automated tests. For this endpoint we need to test two scenarios:
+
+- **[GQL-PFL-01]** `profile` returns `null` when queried without token
+- **[GQL-PFL-02]** `profile` returns the correct profile data for an authenticated user
+
+The first test is easy. We just use our test client to make a query to the `profile` endpoint. Since we don't provide an authentication header the response should return `null` (or `None` in Python):
+
+```python
+# tests/integration/graphql/profile/test_profile_query.py
+class TestGraphQLProfileQuery:
+    """GraphQL.query.profile"""
+
+    query = "query QueryProfile { profile { id email organizationId } }"
+
+    def test_query_profile_without_token(self, client):
+        """[GQL-PFL-01] returns null if no authentication token is provided"""
+
+        json = {"query": self.query}
+        response = client.post("/graphql", json=json)
+
+        assert response.status_code == 200
+
+        # confirm no profile has been returned
+        result = response.json()
+        assert result["data"]["profile"] is None
+```
+
+For the next test we need to obtain a valid token that identifies an existing user. We will do this a lot so it's worth setting up a fixture for this. The code below defines the `get_auth_headers` Pytest fixture. This fixture defines and returns a function that - when invoked with an existing user id - will produce the correct `authorization` header for this user. It builds on the existing `dependencies` and `all_users` fixtures to get the correct user and generate a token for this user.
+
+```python
+# tests/conftest.py
+
+def get_fixture_by_id(collection, id):
+    """return element with given id from collection"""
+    for item in collection:
+        if item["id"] == id:
+            return item
+    raise ValueError(f"id '{id}' not found")
+
+@pytest.fixture(scope="session")
+def get_auth_headers(dependencies, all_users):
+    def get_auth_headers(user_id):
+        auth_service = dependencies.services.auth_service()
+        user = get_fixture_by_id(all_users, user_id)
+        token = auth_service.get_token(AuthUser.parse_obj(user))
+
+        return {"authorization": f"Bearer {token}"}
+
+    return get_auth_headers
+```
+
+With the new fixture we can set up a test that takes an existing user (from the `all_users` fixture) and adds the authorization headers for that user to the query. We can add headers to the test client's post request via the `headers` keyword argument. Then we just have to compare the returned profile data with the initial user's data to confirm that the profile is correct.
+
+```python
+    def test_query_profile_with_user_token(self, all_users, client, get_auth_headers):
+        """[GQL-PFL-02] returns the correct profile data for an authenticated user"""
+        user = all_users[3]
+        headers = get_auth_headers(user["id"])
+        json = {"query": self.query}
+        response = client.post("/graphql", headers=headers, json=json)
+
+        assert response.status_code == 200
+
+        # confirm the right user data has been returned as profile
+        result = response.json()
+        profile = result["data"]["profile"]
+
+        assert profile["id"] == user["id"]
+        assert profile["email"] == user["email"]
+        assert profile["organizationId"] == user["organization_id"]
+```
+
+## Use Case with Authenticated User
+
+We now have a way to authenticate a user who's making a requests. Let's update our `ListUsersUseCase` logic to use that information and tailor the response based on the user's role and identity.
+
 TODO
