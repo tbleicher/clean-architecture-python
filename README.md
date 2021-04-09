@@ -2,7 +2,7 @@
 
 In this repo I will build up a GraphQL server in Python based on [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) principles. This is mostly an academic exercise without a specific application in mind. I hope that the insights gained here will help me when next I have to think about real world programming problems.
 
-## Roadmap
+## Table of Contents
 
 0. Introduction (yet to come)
 1. [Basic FastAPI server with GraphQL in Docker](./src/docs/01_fastapi_graphql_docker.md)
@@ -14,13 +14,19 @@ In this repo I will build up a GraphQL server in Python based on [Clean Architec
 - b) [UserRepository Interface](./src/docs/04b_repository_interface.md)
 - c) [In-Memory UserRepository Implementation](./src/docs/04c_memory_repository.md)
 - d) [UserService](./src/docs/04d_user_service.md)
-- e) Use Case Logic
-- d) GraphQL Resolvers
-- f) Dependencies Setup
-- g) Integration Tests
+- e) [Use Case Logic](./src/docs/04e_list_users_use_case.md)
+- f) [GraphQL Resolvers](./src/docs/04f_query_users_resolver.md)
 
-5. Authorisation
-6. ... and some more
+5. [Dependency Injection Redux](./src/docs/05_di_redux.md)
+
+6. Authentication
+
+- a) [Authentication Token](./src/docs/06a_authentication.md)
+- b) [Authentication Middleware](./src/docs/06b_auth_middleware.md)
+
+7. Groups and Resources
+8. Memberships
+9. Permissions
 
 ## Installation
 

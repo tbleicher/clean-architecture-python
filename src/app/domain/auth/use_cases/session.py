@@ -17,6 +17,10 @@ class GetSessionUserUseCase:
     ):
         self.auth_service: AuthServiceInterface = auth_service
 
-    def execute(self, token: str) -> Optional[SessionUser]:
+    async def execute(self, token: str) -> Optional[SessionUser]:
         """return list of groups in the same organization"""
-        return self.auth_service.get_session_user(token)
+        session_user = self.auth_service.get_session_user_from_token(token)
+
+        # Optional: implement async user data lookup here
+
+        return session_user

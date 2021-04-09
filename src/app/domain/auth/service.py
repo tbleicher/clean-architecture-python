@@ -23,20 +23,6 @@ def create_access_token(payload: dict, config: Any) -> str:
     return token
 
 
-def get_token_from_header(auth_header: str) -> str:
-    """get token string from header value"""
-    if auth_header.startswith("Bearer "):
-        return auth_header.split(" ")[1]
-
-    return auth_header
-
-
-def get_token_user(user: AuthUser) -> dict:
-    """format user data for token payload"""
-    session_user = SessionUser.parse_obj(user.dict())
-    return session_user.dict()
-
-
 def verify_password(plain_password, hashed_password) -> bool:
     """compare password with stored password hash"""
     return bcrypt_context.verify(plain_password, hashed_password)
@@ -61,19 +47,20 @@ class AuthService(AuthServiceInterface):
         return TokenDataDTO(token=token)
 
     def get_token(self, user) -> str:
-        """create token with user data as payload"""
-        payload = {"sub": user.id, "user": get_token_user(user)}
+        """create token with session user data as payload"""
+        session_user = SessionUser.parse_obj(user.dict())
+        payload = {"sub": user.id, "user": session_user.dict()}
 
         return create_access_token(payload, self.config)
 
-    def get_session_user(self, token: str) -> Optional[SessionUser]:
+    def get_session_user_from_token(self, token: str) -> Optional[SessionUser]:
         """extract user data from session token"""
         algorithm = self.config["algorithm"]
         secret = self.config["secret"]
 
         try:
             decoded = jwt.decode(token, secret, algorithms=[algorithm])
-            user = SessionUser(**decoded["user"])
-            return user
+            session_user = SessionUser(**decoded["user"])
+            return session_user
         except Exception:
             return None

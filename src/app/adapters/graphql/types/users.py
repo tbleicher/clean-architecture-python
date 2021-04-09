@@ -16,3 +16,13 @@ class User(graphene.ObjectType):
     @staticmethod
     def resolve_full_name(parent: UserEntity, info) -> str:
         return f"{parent.first_name} {parent.last_name}"
+
+
+class UserProfile(graphene.ObjectType):
+    class Meta:
+        description = "Details of the current user"
+
+    id = graphene.ID(required=True)
+    email = graphene.String(required=True)
+    organization_id = graphene.String(required=True)
+    is_admin = graphene.Boolean(required=True)

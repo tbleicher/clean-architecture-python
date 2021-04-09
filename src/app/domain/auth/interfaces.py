@@ -14,11 +14,11 @@ class AuthServiceInterface(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_token(self, user: User):
+    def get_token(self, user: User) -> str:
         """return token data for user"""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_session_user(self, request) -> Optional[SessionUser]:
+    def get_session_user_from_token(self, request) -> Optional[SessionUser]:
         """return SessionUser from request"""
         raise NotImplementedError
