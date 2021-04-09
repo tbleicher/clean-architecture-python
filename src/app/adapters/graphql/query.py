@@ -22,4 +22,4 @@ class Query(graphene.ObjectType):
 
     @staticmethod
     async def resolve_users(parent, info):
-        return await resolvers.list_users()
+        return await resolvers.list_users(info)

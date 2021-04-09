@@ -333,6 +333,162 @@ With the new fixture we can set up a test that takes an existing user (from the 
 
 ## Use Case with Authenticated User
 
-We now have a way to authenticate a user who's making a requests. Let's update our `ListUsersUseCase` logic to use that information and tailor the response based on the user's role and identity.
+We now have a way to authenticate a user who's making a requests. Let's incorporate this information in the logic to use that information and tailor the response based on the user's role and identity.
 
-TODO
+Currently the `ListUsersUseCase` returns a list of all users, regardless of the user who is making the request. We can refine our requirements and define the expected response based on the information we have about the user:
+
+- **[GQL-US-001]** `users` returns an empty list when the current user is not authenticated
+- **[GQL-US-002]** `users` returns a list of all users when the current user is an admin
+- **[GQL-US-003]** `users` returns a list of users in the same organisation as the current user
+
+### Users List without Access Token
+
+We can adapt the current (temporary) test for our `users` GraphQL endpoint to test the first requirement. In the test case we do not provide authentication headers so all we need to change is the assertion in the last line where we now check that the `users` array has a length of 0.
+
+```python
+# tests/integration/graphql/users/test_users_query.py
+    def test_query_users_list_without_token(self, client):
+        """[GQL-US-001] returns an empty list without token"""
+        json = {"query": self.query}
+        response = client.post("/graphql", json=json)
+
+        assert response.status_code == 200
+
+        result = response.json()
+        assert len(result["data"]["users"]) == 0
+```
+
+This test will now fail. We still return the full list of users so our expected result does not match the actual. We need to update the use case itself to return an empty list when the caller does not provide a `SessionUser` instance for the current user. We also need to update the signature of the `execute` method to accept the `current_user` as optional argument.
+
+```python
+    async def execute(self, current_user: SessionUser = None) -> List[User]:
+        if not current_user:
+            return []
+
+        return await self.user_service.find_all()
+```
+
+Now we can run the test again and confirm that is passes.
+
+### Users List as Admin User
+
+When we query the users list as user with admin privileges we want to get a list of all users as before. An admin user is a user who has the `is_admin` flag set to `true`. In our test fixtures there is one admin user with the user id `USER-ADM`.
+
+Our test case setup merges the authentication header from the `profile` endpoint test with assertion that all users are returned from the original users listing:
+
+```python
+# tests/integration/graphql/users/test_users_query.py
+    def test_query_users_list_as_admin(self, all_users, client, get_auth_headers):
+        """[GQL-US-002] returns a list of all users when queried as admin"""
+        headers = get_auth_headers("USER-ADM")
+        json = {"query": self.query}
+        response = client.post("/graphql", headers=headers, json=json)
+
+        assert response.status_code == 200
+
+        result = response.json()
+        assert len(result["data"]["users"]) == len(all_users)
+```
+
+This test will fail at this point although we provide the correct authorization header. The reason is that we are not passing this information on from the GraphQL resolver to the use case. First we need to update the resolver to take the query `info` object as argument, extract the `current_user` from it and pass this object to the use case:
+
+```python
+# app/adapters/graphql/query.py
+    @staticmethod
+    async def resolve_users(parent, info):
+        return await resolvers.list_users(info)
+
+# app/adapters/graphql/resolvers/users.py
+async def list_users(info) -> List[User]:
+    """call ListUsersUseCase.execute() with current_user as argument"""
+    current_user = get_current_user(info)
+    use_case = ListUsersUseCase()
+    return await use_case.execute(current_user)
+```
+
+This is all we need to do to make both tests pass. Although we don't yet check if the user is an admin, we still return the full list of users as the default response in our use case. This is - by chance - the correct response for an admin user and so the test passes.
+
+### Users List as Regular User
+
+Exposing a list of all of our users to anyone who is logged in is not our final implementation. We want to limit a regular user's view of other users to those that are members of the same organisation _unless_ the user is an admin. In our users fixture we have two organizations:
+
+- **Shoestring Ltd** with 7 members (id: `GROUP-SHOESTRING-LTD`)
+- **Big Bucks** with 3 members (id: `GROUP-BIG-BUCKS`)
+
+So a member of _Shoestring Ltd_ should see a list of 7 users, a member of _Big Bucks_ should see 3. We can set up a combination of a user id and the expected count for each group and iterate over the combinations in our test:
+
+```python
+# tests/integration/graphql/users/test_users_query.py
+    def test_query_users_list_as_user(self, client, get_auth_headers):
+        """[GQL-US-003] returns a list of users in the current user's organisation"""
+        combinations = [["USER-CLOE", 7], ["USER-BIG-STEVE", 3]]
+
+        for user_id, count in combinations:
+            headers = get_auth_headers(user_id)
+            json = {"query": self.query}
+            response = client.post("/graphql", headers=headers, json=json)
+
+            assert response.status_code == 200
+
+            result = response.json()
+            assert len(result["data"]["users"]) == count
+```
+
+We can run this test now and check the error message. The test will fail because we receive too many users. So far our use case does not check if a logged in user is an admin or not. It just confirms the presence of a `SessionUser` object. So the first thing we need to change is to show the list of all users only when the current user is an admin:
+
+```python
+# app/domain/users/use_cases/list_users.py
+    async def execute(self, current_user: SessionUser = None) -> List[User]:
+        if not current_user:
+            return []
+
+        if current_user.is_admin:
+            return await self.user_service.find_all()
+
+        return []
+```
+
+Note that I also return an empty list as the default response. Without this the Python type validation will fail because we always have to return a list from the `execute` method.
+
+Now our previous two tests still pass but and the current test fails because we do not return any users. We can get the correct list of users by searching our user repository for all users that have the same `organization_id` than the current user.
+
+The _UserService_ provides the `find_users_by_attributes` method to filter the list of users to those with the given attributes. For this use case we want to match the `organization_id` to that of the `current_user`. This search will always return a list so we can use it as the default response of our `execute` method. Here is the complete code:
+
+```python
+# app/domain/users/use_cases/list_users.py
+    async def execute(self, current_user: SessionUser = None) -> List[User]:
+        if not current_user:
+            return []
+
+        if current_user.is_admin:
+            return await self.user_service.find_all()
+
+        attributes = {"organization_id": current_user.organization_id}
+        return await self.user_service.find_users_by_attributes(attributes)
+```
+
+With this addition all tests for the `ListUsersUseCase` pass and all requirements are met.
+
+## Review
+
+We can see in this small example that we are able to implement our requirements in a few simple lines of code if we focus on the logic alone. By striping away transport and data access concerns the use case becomes a condensed expression of our business logic.
+
+Admittedly, this is a simple example. If our requirements become more complex, the use case will unavoidably increase in size. But that does not mean that the code has to become difficult to understand. We still can express our logic as a sequence of conditions and return the right selection of users if a condition is met.
+
+## Refactoring Auth Fixtures
+
+In our tests we used the `get_auth_headers` fixture to obtain headers for an individual user. We will use this frequently and typically write tests involving an admin user and a 'typical' user. Specifying their ids throughout many tests is repetitive and we are better off if we define a dedicated fixture for each user:
+
+```python
+# tests/conftest.py
+@pytest.fixture(scope="session")
+def auth_headers(get_auth_headers):
+    return get_auth_headers("USER-CLOE")
+
+
+@pytest.fixture(scope="session")
+def admin_auth_headers(get_auth_headers):
+    return get_auth_headers("USER-ADM")
+```
+
+Whenever we need to make an authenticated request we can add one of these fixtures to the dependencies of the test case and just add them as `headers` keyword argument to the test client call. For tests where we need a specific user's credentials we can still use the `get_auth_headers` fixture.

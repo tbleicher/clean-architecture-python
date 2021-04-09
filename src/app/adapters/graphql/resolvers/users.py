@@ -16,7 +16,8 @@ async def get_user_profile(info) -> Optional[UserProfile]:
     return await use_case.execute(current_user)
 
 
-async def list_users() -> List[User]:
-    """call use case and convert user entities to GraphQL Users"""
+async def list_users(info) -> List[User]:
+    """call ListUsersUseCase.execute() with current_user as argument"""
+    current_user = get_current_user(info)
     use_case = ListUsersUseCase()
-    return await use_case.execute()
+    return await use_case.execute(current_user)

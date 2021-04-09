@@ -69,6 +69,16 @@ def get_auth_headers(dependencies, all_users):
     return get_auth_headers
 
 
+@pytest.fixture(scope="session")
+def auth_headers(get_auth_headers):
+    return get_auth_headers("USER-CLOE")
+
+
+@pytest.fixture(scope="session")
+def admin_auth_headers(get_auth_headers):
+    return get_auth_headers("USER-ADM")
+
+
 def get_spec_id(prefix: str = "", description: str = "") -> str:
     """look for a requirement id and return id and description as tuple"""
     match = SPEC_REGEX.search(description)
