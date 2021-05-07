@@ -57,11 +57,26 @@ The `src` folder is a mapped volume in the Docker container and the startup comm
 
 However, Python dependencies are installed only in the container and not accessible by your editor. Your editor may depend on these to enable things like Intellisense. You can create a virtual environment in the `src` folder for the editor and to run the server script outside of the docker container:
 
-```
+```bash
 $ cd src
 $ python3.9 -m venv ./venv
 $ source ./venv/bin/activate
 $ pip install -r requirements.txt
+```
+
+The you can start the server _in the src folder_ with these commands:
+
+```bash
+$ source ./venv/bin/activate
+$ uvicorn app.main:app --reload
+```
+
+In later steps the server requires environment variables to be set. You can define a set of variables in an `env` file and load it with the `source` command:
+
+```bash
+$ source ./venv/bin/activate
+$ source ./env.test
+$ uvicorn app.main:app --reload
 ```
 
 If you use VS Code you can also use a [Remote Python Development](https://devblogs.microsoft.com/python/remote-python-development-in-visual-studio-code/).
