@@ -25,12 +25,12 @@ I think this makes best use of the potential of a token: It provides us with bas
 
 ### Implementing Middleware in FastAPI
 
-Based on the FastAPI code example a _middleware_ receives two arguments:
+In FastAPI middleware is implemented as a _decorator_. Based on the FastAPI code example a _middleware_ receives two arguments:
 
 - the _request_
 - a _call_next_ function
 
-We are only interested in processing the request. The _response_ we return unchanged. In FastAPI middleware is implemented as a _decorator_. The setup for our authentication middleware needs to be at the top level of the app in `main.py`:
+The middleware can update the _request_, use _call_next_ to obtain the _response_ and update the response before returning it. We are only interested in processing the request. The response we return unchanged. The setup for our authentication middleware needs to be at the top level of the app in `main.py`:
 
 ```python
 # app/main.py
@@ -467,7 +467,97 @@ The _UserService_ provides the `find_users_by_attributes` method to filter the l
         return await self.user_service.find_users_by_attributes(attributes)
 ```
 
-With this addition all tests for the `ListUsersUseCase` pass and all requirements are met.
+With this addition all of our requirements are met and our integration tests pass but the temporary unit test `DOM-UC-US-LST-00` for the `ListUsersUseCase` will fail.
+
+### UseCase Unit Tests
+
+Let's review how the _unit_ test is currently implemented:
+
+```python
+# tests/unit/domain/users/use_cases/test_list_users.py
+
+    @pytest.mark.asyncio
+    async def test_use_case_list_users(self, mock_user_service):
+        """[DOM-UC-US-LST-00] ListUsersUseCase calls user_service.find_all"""
+
+        mock_user_service.find_all = AsyncMock()
+
+        use_case = ListUsersUseCase(user_service=mock_user_service)
+        await use_case.execute()
+
+        mock_user_service.find_all.assert_awaited()
+```
+
+We test that the use case calls the `find_all` method of the _UserService_ but we do not provide a `current_user` argument when we call it. In that case we bypass the service and just return an empty list. In fact, `find_all` is now only called when the current user is an admin. To cover all of our code branches we need to test three conditions:
+
+- use case is called without _current_user_
+- use case is called by a regular user
+- use case is called by an admin user
+
+In the first case we just need to check that the return value of the call is an empty list. We don't really care how the use case gets it but if it would call any method on the user service it would raise a `NotImplementedError`. We can also update the test description and give it a permanent id.
+
+```python
+# tests/unit/domain/users/use_cases/test_list_users.py
+
+    @pytest.mark.asyncio
+    async def test_use_case_list_users_without_current_user(self, mock_user_service):
+        """[DOM-UC-US-LST-01] ListUsersUseCase return empty list without current user"""
+        use_case = ListUsersUseCase(user_service=mock_user_service)
+        result = await use_case.execute()
+
+        assert result == []
+```
+
+For the second test we first need to set up a `SessionUser` entity. It does not matter if a corresponding user exists in our fixtures. We are not interested in the search result for a given user. We just want to test that the use case uses the right query options to find them.
+
+The query attribute is the user's `organisation_id`. We can set this up as the _expected_ value and use the `AsyncMock.assert_awaited_with` method to confirm that `UserService.find_users_by_attributes` has been called with this value:
+
+```python
+# tests/unit/domain/users/use_cases/test_list_users.py
+
+    @pytest.mark.asyncio
+    async def test_use_case_list_users_with_regular_user(self, mock_user_service):
+        """[DOM-UC-US-LST-02] ListUsersUseCase searches users by organisation_id when called by a regular user"""
+
+        mock_user_service.find_users_by_attributes = AsyncMock()
+        current_user = SessionUser(
+            id="user-id",
+            email="user@example.com",
+            organization_id="example-org-id",
+            is_admin=False,
+        )
+        expected = {"organization_id": current_user.organization_id}
+
+        use_case = ListUsersUseCase(user_service=mock_user_service)
+        await use_case.execute(current_user)
+
+        mock_user_service.find_users_by_attributes.assert_awaited_with(expected)
+```
+
+Finally, when the current user is an admin we expect that the `find_all` method of the UserService is called. This is our original test but with an added _current_user_ argument.
+
+```python
+# tests/unit/domain/users/use_cases/test_list_users.py
+
+    @pytest.mark.asyncio
+    async def test_use_case_list_users_with_admin_user(self, mock_user_service):
+        """[DOM-UC-US-LST-03] ListUsersUseCase returns all users when called by an admin"""
+
+        mock_user_service.find_all = AsyncMock()
+        current_user = SessionUser(
+            id="user-id",
+            email="user@example.com",
+            organization_id="example-org-id",
+            is_admin=True,
+        )
+
+        use_case = ListUsersUseCase(user_service=mock_user_service)
+        await use_case.execute(current_user)
+
+        mock_user_service.find_all.assert_awaited()
+```
+
+Now _all_ test should be green.
 
 ## Review
 
