@@ -10,6 +10,8 @@ class Query(graphene.ObjectType):
 
     profile = graphene.Field(types.UserProfile)
 
+    user = graphene.Field(types.User, user_id=graphene.String(required=True))
+
     users = graphene.List(graphene.NonNull(types.User), required=True)
 
     @staticmethod
@@ -19,6 +21,10 @@ class Query(graphene.ObjectType):
     @staticmethod
     async def resolve_profile(parent, info):
         return await resolvers.get_user_profile(info)
+
+    @staticmethod
+    async def resolve_user(parent, info, user_id):
+        return await resolvers.get_user_details(info, user_id)
 
     @staticmethod
     async def resolve_users(parent, info):

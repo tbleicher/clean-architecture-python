@@ -8,7 +8,7 @@ In this repo I will build up a GraphQL server in Python based on [Clean Architec
 1. [Basic FastAPI server with GraphQL in Docker](./src/docs/01_fastapi_graphql_docker.md)
 2. [Testing](./src/docs/02_testing.md)
 3. [Dependency Injection](./src/docs/03_dependency_injection.md)
-4. The first Use Case
+4. The first Use Case: Users List
 
 - a) [Domain Entities](./src/docs/04a_entities.md)
 - b) [UserRepository Interface](./src/docs/04b_repository_interface.md)
@@ -24,9 +24,10 @@ In this repo I will build up a GraphQL server in Python based on [Clean Architec
 - a) [Authentication Token](./src/docs/06a_authentication.md)
 - b) [Authentication Middleware](./src/docs/06b_auth_middleware.md)
 
-7. Groups and Resources
-8. Memberships
-9. Permissions
+7. [User Details Use Case](./src/docs/07_user_details.md)
+8. Groups and Resources
+9. Memberships
+10. Permissions
 
 ## Installation
 
@@ -39,7 +40,7 @@ $ docker-compose up -d --build
 This will build and start the Docker image. You can test that it's running with `curl`:
 
 ```
-$ curl http://localhost:4000/healthcheck
+$ curl http://localhost:8000/healthcheck
 ```
 
 ### Testing
@@ -78,5 +79,7 @@ $ source ./venv/bin/activate
 $ source ./env.test
 $ uvicorn app.main:app --reload
 ```
+
+The server will run on the default port 8000 when started this way.
 
 If you use VS Code you can also use a [Remote Python Development](https://devblogs.microsoft.com/python/remote-python-development-in-visual-studio-code/).
